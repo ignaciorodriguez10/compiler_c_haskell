@@ -3,100 +3,96 @@ module Grammar where
 import Tokens
 }
 
-%name parseTokenss
+%name parse
 %tokentype { Token }
 %error { parseError }
 
 %token
-    nl          { TokenNewLine }
-    int         { TokenInt $$ }
-    var         { TokenVar}
-    sym         { TokenSym $$}
-    else        { TokenElse }
-    endif       { TokenEndIf }
-    while       { TokenWhile }
-    endwhile    { TokenEndWhile }
-    print       { TokenPrint }
-    if          { TokenIf }
-    '='         { TokenAssign }
-    '+'         { TokenPlus }
-    '-'         { TokenMinus }
-    '*'         { TokenMultiply }
-    '/'         { TokenDivide }
-    '<'         { TokenLess }
-    '>'         { TokenGreater }
-    '<='        { TokenLessEqual }
-    '>='        { TokenGreaterEqual}
+  TokenIf          { TokenIf }
+  TokenElse        { TokenElse }
+  TokenWhile       { TokenWhile }
+  TokenWriteLn     { TokenWriteLn }
+  TokenReadLn      { TokenReadLn }
+  TokenLess        { TokenLess }
+  TokenGreater     { TokenGreater }
+  TokenLessEqual   { TokenLessEqual }
+  TokenGreaterEqual{ TokenGreaterEqual }
+  TokenAssign      { TokenAssign }
+  TokenCompare     { TokenCompare }
+  TokenPlus        { TokenPlus }
+  TokenMinus       { TokenMinus }
+  TokenMultiply    { TokenMultiply }
+  TokenDivide      { TokenDivide }
+  TokenOpenParenthesis { TokenOpenParenthesis }
+  TokenCloseParenthesis { TokenCloseParenthesis }
+  TokenOpenKey     { TokenOpenKey }
+  TokenCloseKey    { TokenCloseKey }
+  TokenQuote       { TokenQuote }
+  TokenInt     { TokenInt $$ }
+  TokenSym  { TokenSym $$ }
+  TokenNewLine     { TokenNewLine }
 
 
 %left '+' '-'
-%left '*' '/'
+%left '*'
 %left '<' '>' '<=' '>='
 
 %%
 
-prog : exp prog              { $1 : $2 } 
-     | exp                   { [$1] }
+prog : stmt prog              { $1 : $2 } 
+     | stmt                   { [$1] }
 
-exp : if_expression                                    { IfExp $1 }
-    | print int_op nl                                  { Print $2 }
-    | while while_cond while_body endwhile nl          { WhileExp $2 $3}
-    | var sym '=' int_op nl                            { Assign $2 $4 }
-    | int_op nl                                        { Tok $1 }
+stmt : assign TokenNewLine              { AssignStmt $1 }
+     | print TokenNewLine               { PrintStmt $1 }
+     | while_loop TokenNewLine          { WhileStmt $1 }
 
-if_expression : if if_cond if_body endif nl                     { If $2 $3 }
-              | if if_cond if_body else nl else_body endif nl   { IfElse $2 $3 $6 }
+assign : TokenSym TokenAssign exp          { Assign $1 $3 }
 
-if_cond : cond nl { $1 }
+print : TokenWriteLn TokenOpenParenthesis exp TokenCloseParenthesis   { Print $3 }
 
-while_cond : cond nl { $1 }
+while_loop : TokenWhile TokenOpenParenthesis cond TokenCloseParenthesis TokenOpenKey prog TokenCloseKey   { WhileLoop $3 $6 }
 
-while_body : prog   { $1 }
+exp : TokenSym                     { SymExp $1 }
+    | TokenInt                     { IntExp $1 }
+    | exp TokenPlus exp            { PlusExp $1 $3 } 
+    | exp TokenMinus exp           { MinusExp $1 $3 }
+    | exp TokenMultiply exp        { MultiplyExp $1 $3 }
+    | exp TokenDivide exp          { DivideExp $1 $3 }
 
-if_body : prog      {$1}
-
-else_body : prog    {$1}
-
-int_op : sym                        { Sym $1 }
-       | int                        { Int $1 }
-       | int_op '+' int_op          { Plus $1 $3 } 
-       | int_op '-' int_op          { Minus $1 $3 }
-       | int_op '*' int_op          { Multiply $1 $3 }
-       | int_op '/' int_op          { Divide $1 $3 }
-
-cond : int_op '<'  int_op             { Less $1 $3 }
-     | int_op '<=' int_op             { LessEqual $1 $3 }
-     | int_op '>'  int_op             { Greater $1 $3 }
-     | int_op '>=' int_op             { GreaterEqual $1 $3 }
+cond : exp TokenLess exp             { LessCond $1 $3 }
+     | exp TokenLessEqual exp        { LessEqualCond $1 $3 }
+     | exp TokenGreater exp          { GreaterCond $1 $3 }
+     | exp TokenGreaterEqual exp     { GreaterEqualCond $1 $3 }
 
 {
-
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
-data Exp = Assign String IntOp
-         | Tok IntOp
-         | IfExp IfBody
-         | Print IntOp
-         | WhileExp Conditional [Exp]
-         deriving (Eq, Show)
-
-data IfBody = If Conditional [Exp]
-            | IfElse Conditional [Exp] [Exp]
-            deriving (Eq, Show)
-
-data Conditional = Less IntOp IntOp
-          | LessEqual IntOp IntOp
-          | Greater IntOp IntOp
-          | GreaterEqual IntOp IntOp
+data Stmt = AssignStmt Assign
+          | PrintStmt Print
+          | WhileStmt WhileLoop
           deriving (Eq, Show)
 
-data IntOp = Int Int
-           | Sym String
-           | Plus IntOp IntOp
-           | Minus IntOp IntOp
-           | Multiply IntOp IntOp
-           | Divide IntOp IntOp
+data Assign = Assign String Exp
+            deriving (Eq, Show)
+
+data Print = Print Exp
            deriving (Eq, Show)
 
+data WhileLoop = WhileLoop Cond [Stmt]
+               deriving (Eq, Show)
+
+data Exp = SymExp String
+         | IntExp Int
+         | PlusExp Exp Exp
+         | MinusExp Exp Exp
+         | MultiplyExp Exp Exp
+         | DivideExp Exp Exp
+         deriving (Eq, Show)
+
+data Cond = LessCond Exp Exp
+          | LessEqualCond Exp Exp
+          | GreaterCond Exp Exp
+          | GreaterEqualCond Exp Exp
+          deriving (Eq, Show)
 }
