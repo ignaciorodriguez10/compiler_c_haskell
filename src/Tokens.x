@@ -12,30 +12,34 @@ tokens :-
   $whiteSpace+                  ;
   \t+                           ;
   [\n \;]+                      { \s -> TokenNewLine}
-  var                           { \s -> TokenVar }
   if                            { \s -> TokenIf }
   else                          { \s -> TokenElse }
-  endif                         { \s -> TokenEndIf}
   while                         { \s -> TokenWhile}
-  endwhile                      { \s -> TokenEndWhile}
-  print                         { \s -> TokenPrint}
+  WriteLn                       { \s -> TokenWriteLn}
+  ReadLn                        { \s -> TokenReadLn }
   \<                            { \s -> TokenLess }
   \>                            { \s -> TokenGreater }
   \<=                           { \s -> TokenLessEqual }
   \>=                           { \s -> TokenGreaterEqual }
   \=                            { \s -> TokenAssign }
+  \==                           { \s -> TokenCompare }
   \+                            { \s -> TokenPlus }
   \-                            { \s -> TokenMinus }
   \*                            { \s -> TokenMultiply }
   \/                            { \s -> TokenDivide }
+  \(                            { \s -> TokenOpenParenthesis }
+  \)                            { \s -> TokenCloseParenthesis }
+  \{                            { \s -> TokenOpenKey }
+  \}                            { \s -> TokenCloseKey }
+  \"                            { \s -> TokenQuote}
+  
   $digit+                       { \s -> TokenInt (read s) }
   $alpha [$alpha $digit \_ \']* { \s -> TokenSym s }
 
 {
 
 -- The token type:
-data Token = TokenVar
-           | TokenInt Int
+data Token = TokenInt Int
            | TokenSym String
            | TokenAssign
            | TokenPlus
@@ -52,10 +56,15 @@ data Token = TokenVar
            | TokenGreaterEqual
            | TokenIf
            | TokenElse
-           | TokenEndIf
            | TokenWhile
-           | TokenEndWhile
-           | TokenPrint
+           | TokenOpenParenthesis
+           | TokenCloseParenthesis
+           | TokenOpenKey
+           | TokenCloseKey
+           | TokenWriteLn
+           | TokenReadLn
+           | TokenCompare
+           | TokenQuote
            deriving (Eq,Show)
 
 scanTokens = alexScanTokens
