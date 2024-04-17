@@ -11,12 +11,16 @@ $whiteSpace = [\ ]
 tokens :-
   $whiteSpace+                  ;
   \t+                           ;
-  [\n \;]+                      { \s -> TokenNewLine}
+  \n                            { \s -> TokenNewLine}
   if                            { \s -> TokenIf }
   else                          { \s -> TokenElse }
   while                         { \s -> TokenWhile}
   WriteLn                       { \s -> TokenWriteLn}
   ReadLn                        { \s -> TokenReadLn }
+  True                          { \s -> TokenTrue }
+  False                         { \s -> TokenFalse }
+  \|\|                           { \s -> TokenOr }
+  \&&                           { \s -> TokenAnd }
   \<                            { \s -> TokenLess }
   \>                            { \s -> TokenGreater }
   \<=                           { \s -> TokenLessEqual }
@@ -31,10 +35,11 @@ tokens :-
   \)                            { \s -> TokenCloseParenthesis }
   \{                            { \s -> TokenOpenKey }
   \}                            { \s -> TokenCloseKey }
-  \"                            { \s -> TokenQuote}
-  
+  \"                            { \s -> TokenQuote }
+  \;                            { \s -> TokenSemiColon }
   $digit+                       { \s -> TokenInt (read s) }
   $alpha [$alpha $digit \_ \']* { \s -> TokenSym s }
+  \"[^\"]*\"                    { \s -> TokenString (init (tail s)) }
 
 {
 
@@ -50,6 +55,8 @@ data Token = TokenInt Int
            | SpaceToken String
            | TokenOr
            | TokenAnd
+           | TokenTrue
+           | TokenFalse
            | TokenLess
            | TokenGreater
            | TokenLessEqual
@@ -65,8 +72,9 @@ data Token = TokenInt Int
            | TokenReadLn
            | TokenCompare
            | TokenQuote
+           | TokenString String
+           | TokenSemiColon
            deriving (Eq,Show)
 
 scanTokens = alexScanTokens
-
 }
