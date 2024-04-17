@@ -10,7 +10,7 @@ The objectives of the case study are:
 1. First, install [Stack](https://docs.haskellstack.org/en/stable/README/)
 2. Then, clone this repository
   *  `git clone https://github.com/JCepedaVillamayor/funcional-compiler.git`
-3. Go to the project folder and build the project
+3. Go  to the project folder and build the project
   * `cd <project-path>`
   * `stack build`
 
