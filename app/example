@@ -1,13 +1,14 @@
 x = 5;
-a = "hola qie tal";
+a = "hola que tal";
 
 
 if (x > 5 && x < 5) {
     x = x - 1;
     x = x + 1;
-    while (x == 3){
+    while (x == 3 && y >= 12){
         a = 2;
     }
     WriteLn("hola que "+ "tal");
+    WriteLn(a);
 }
 
