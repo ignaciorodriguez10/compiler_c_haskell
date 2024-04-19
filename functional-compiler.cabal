@@ -2,12 +2,12 @@ name:                functional-compiler
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/jcepedavillamayor/functional-compiler#readme
+homepage:            https://github.com/ignaciorodriguez10/compiler_c_haskell.git#README.md
 license:             BSD3
 license-file:        LICENSE
-author:              Jaime Cepeda
-maintainer:          jcepedavillamayor@gmail.com
-copyright:           2017 Jaime Cepeda Villamayor
+author:              Ignacio Rodríguez Senís
+maintainer:          ignacio.rodriguez10@alu.uclm.es
+copyright:           2024 Ignacio Rodríguez Senís
 category:            Compiler
 build-type:          Simple
 extra-source-files:  README.md
@@ -59,4 +59,4 @@ test-suite functional-compiler-test
 
 source-repository head
   type:     git
-  location: https://github.com/jcepedavillamayor/functional-compiler
+  location: https://github.com/ignaciorodriguez10/compiler_c_haskell.git
