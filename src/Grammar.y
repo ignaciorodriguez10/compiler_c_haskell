@@ -112,6 +112,8 @@ data Exp = SymExp String
          | StringExp String
          deriving (Eq, Show)
 
+         
+
 data Cond = LessCond Exp Exp
           | LessEqualCond Exp Exp
           | GreaterCond Exp Exp

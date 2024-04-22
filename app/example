@@ -1,14 +1,16 @@
 x = 5;
 a = "hola que tal";
+y = 15;
 
 
-if (x > 5 && x < 5) {
+if (x >= 5 && x < 10) {
     x = x - 1;
     x = x + 1;
-    while (x == 3 && y >= 12){
-        a = 2;
+    while (x == 5 && y >= 12){
+        y = y - 1;
+        WriteLn(x);
+        WriteLn(y);
     }
-    WriteLn("hola que "+ "tal");
-    WriteLn(a);
+    WriteLn(x);
 }
 

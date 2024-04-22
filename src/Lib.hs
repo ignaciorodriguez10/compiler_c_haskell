@@ -1,5 +1,7 @@
 module Lib
-where
+    ( interpretar
+    , emptyDataStore
+    ) where
 
 import Grammar
 
@@ -8,81 +10,85 @@ type MapValue = (String, Int)
 emptyDataStore :: [MapValue]
 emptyDataStore = []
 
-addToDataStore :: [MapValue] -> MapValue -> [MapValue]
-addToDataStore l val = val:l
 
-getVal :: String -> [MapValue] -> Int
-getVal a store = case lookup a store of
-    Just val -> val
-    Nothing  -> 0
+-- Función principal para interpretar el programa
+interpretar :: [Stmt] -> IO ()
+interpretar stmts = do
+    _ <- evalStatements stmts []
+    return ()
 
-calcIntOp :: IntOp -> [MapValue] -> Int
-calcIntOp (Int a) _ = a
-calcIntOp (Sym a) store = getVal a store
-calcIntOp (Plus  val1 val2) store = calcIntOp val1 store + calcIntOp val2 store
-calcIntOp (Minus val1 val2) store = calcIntOp val1 store - calcIntOp val2 store
-calcIntOp (Multiply val1 val2) store = calcIntOp val1 store * calcIntOp val2 store
-calcIntOp (Divide val1 val2) store = div (calcIntOp val1 store) (calcIntOp val2 store)
+-- Función para guardar un valor en el almacén de datos
+saveVal :: MapValue -> [MapValue] -> [MapValue]
+saveVal (var, val) store = (var, val) : filter (\(v, _) -> v /= var) store
 
-changeMapValue :: MapValue -> MapValue -> MapValue
-changeMapValue val1@(a, _) val2@(c, _) 
-    | a == c = val1
-    | otherwise = val2
+-- Función para evaluar una lista de declaraciones
+evalStatements :: [Stmt] -> [MapValue] -> IO [MapValue]
+evalStatements [] store = return store
+evalStatements (stmt:stmts) store = do
+    newStore <- evalStatement stmt store
+    evalStatements stmts newStore
 
-updateDataStore :: [MapValue] -> MapValue -> [MapValue]
-updateDataStore store mapVal = map (changeMapValue mapVal) store
+-- Función para evaluar una declaración individual
+evalStatement :: Stmt -> [MapValue] -> IO [MapValue]
+evalStatement (AssignStmt assign) store = evalAssign assign store
+evalStatement (PrintStmt printExp) store = evalPrint printExp store
+evalStatement (WhileStmt whileLoop) store = evalWhileLoop whileLoop store
+evalStatement (IfStmt ifExp) store = evalIfExp ifExp store
 
-saveVal :: MapValue-> [MapValue] -> IO [MapValue]
-saveVal (var, val) store = return ( case lookup var store of
-    Just _ -> updateDataStore store (var, val)
-    Nothing -> addToDataStore store (var, val))
+-- Función para evaluar una asignación
+evalAssign :: Assign -> [MapValue] -> IO [MapValue]
+evalAssign (Assign var exp) store = do
+    let res = evalExp exp store
+    return $ saveVal (var, res) store
 
-evalCond :: Conditional -> [MapValue] -> Bool
-evalCond (Less val1 val2) store = calcIntOp val1 store < calcIntOp val2 store
-evalCond (LessEqual val1 val2) store = calcIntOp val1 store <= calcIntOp val2 store
-evalCond (Greater val1 val2) store = calcIntOp val1 store > calcIntOp val2 store
-evalCond (GreaterEqual val1 val2) store = calcIntOp val1 store >= calcIntOp val2 store 
+-- Función para evaluar una expresión
+evalExp :: Exp -> [MapValue] -> Int
+evalExp (SymExp var) store =
+    case lookup var store of
+        Just val -> val
+        Nothing  -> 0
+evalExp (IntExp val) _ = val
+evalExp (PlusExp exp1 exp2) store = evalExp exp1 store + evalExp exp2 store
+evalExp (MinusExp exp1 exp2) store = evalExp exp1 store - evalExp exp2 store
+evalExp (MultiplyExp exp1 exp2) store = evalExp exp1 store * evalExp exp2 store
+evalExp (DivideExp exp1 exp2) store = div (evalExp exp1 store) (evalExp exp2 store)
+evalExp (StringExp str) _ = error "No se pueden evaluar cadenas"
 
 
-evalIfExpression :: IfBody -> [MapValue] -> IO [MapValue]
-evalIfExpression (If cond part1) store = do
-    if evalCond cond store
-        then eval part1 store
-        else return store
-evalIfExpression (IfElse cond part1 part2) store = do
-    if evalCond cond store
-        then eval part1 store
-        else eval part2 store
+evalPrintCadena :: String -> IO Int
+evalPrintCadena cadena = do
+    putStrLn cadena
+    return 0
 
-evalWhileExpression :: Conditional -> [Exp] -> [MapValue] -> IO [MapValue]
-evalWhileExpression cond val store = do
+
+-- Función para evaluar una impresión
+evalPrint :: Print -> [MapValue] -> IO [MapValue]
+evalPrint (Print exp) store = do
+    putStrLn (show (evalExp exp store))
+    return store
+
+-- Función para evaluar un bucle while
+evalWhileLoop :: WhileLoop -> [MapValue] -> IO [MapValue]
+evalWhileLoop (WhileLoop cond stmts) store = do
     if evalCond cond store
         then do
-            newStore <- eval val store
-            evalWhileExpression cond val newStore
+            newStore <- evalStatements stmts store
+            evalWhileLoop (WhileLoop cond stmts) newStore
         else return store
 
-printValue :: IntOp -> [MapValue] -> IO [MapValue]
-printValue val store = do
-    print (calcIntOp val store)
-    return store
+-- Función para evaluar una expresión if
+evalIfExp :: IfExp -> [MapValue] -> IO [MapValue]
+evalIfExp (IfExp cond stmts) store = do
+    if evalCond cond store
+        then evalStatements stmts store
+        else return store
 
-evalItem :: Exp -> [MapValue] -> IO [MapValue]
-evalItem (Assign val intOp) store = do
-    let res = calcIntOp intOp store
-    saveVal (val, res) store
-evalItem (Tok val) store = do
-    let _ = calcIntOp val store
-    return store
-evalItem (IfExp val) store = do
-    evalIfExpression val store
-evalItem (Print val) store = do
-    printValue val store
-evalItem (WhileExp cond val) store = do
-    evalWhileExpression cond val store
-
-eval :: [Exp] -> [MapValue] -> IO [MapValue]
-eval [x] store = evalItem x store
-eval (x:xs) store = do
-        newStore <- evalItem x store
-        eval xs newStore
+-- Función para evaluar una condición
+evalCond :: Cond -> [MapValue] -> Bool
+evalCond (LessCond exp1 exp2) store = evalExp exp1 store < evalExp exp2 store
+evalCond (LessEqualCond exp1 exp2) store = evalExp exp1 store <= evalExp exp2 store
+evalCond (GreaterCond exp1 exp2) store = evalExp exp1 store > evalExp exp2 store
+evalCond (GreaterEqualCond exp1 exp2) store = evalExp exp1 store >= evalExp exp2 store
+evalCond (EqualCond exp1 exp2) store = evalExp exp1 store == evalExp exp2 store
+evalCond (AndCond cond1 cond2) store = evalCond cond1 store && evalCond cond2 store
+evalCond (OrCond cond1 cond2) store = evalCond cond1 store || evalCond cond2 store
