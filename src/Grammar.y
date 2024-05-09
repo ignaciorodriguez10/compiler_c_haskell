@@ -38,7 +38,7 @@ import Tokens
 
 
 %left '+' '-'
-%left '*'
+%left '*' '/'
 %left '<' '>' '<=' '>='
 
 %%
